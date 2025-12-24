@@ -60,7 +60,7 @@ async function main() {
   const presignData = await presignRes.json();
   console.log('Presign data:', JSON.stringify(presignData, null, 2));
   const uploadUrl = presignData.uploadUrl;
-  const mediaUrl = presignData.url || presignData.mediaUrl || presignData.fileUrl;
+  const mediaUrl = presignData.publicUrl;
   console.log('Media URL:', mediaUrl);
 
   // Step 2: Upload video
