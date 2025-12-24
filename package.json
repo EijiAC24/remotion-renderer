@@ -1,0 +1,24 @@
+{
+  "name": "remotion-renderer",
+  "version": "1.0.0",
+  "description": "Remotion video renderer for GitHub Actions",
+  "private": false,
+  "scripts": {
+    "start": "remotion studio",
+    "build": "remotion render PodcastShort out/video.mp4",
+    "render": "remotion render"
+  },
+  "dependencies": {
+    "@remotion/bundler": "^4.0.394",
+    "@remotion/cli": "^4.0.394",
+    "@remotion/google-fonts": "^4.0.394",
+    "@remotion/media-utils": "^4.0.394",
+    "react": "^19.2.3",
+    "react-dom": "^19.2.3",
+    "remotion": "^4.0.394"
+  },
+  "devDependencies": {
+    "@types/react": "^19.2.7",
+    "typescript": "^5.9.3"
+  }
+}

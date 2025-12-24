@@ -1,0 +1,9 @@
+node_modules/
+out/
+dist/
+*.log
+.DS_Store
+props.json
+public/audio.mp3
+public/cover.jpg
+public/background.png

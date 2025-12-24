@@ -1,0 +1,88 @@
+name: Render Video
+
+on:
+  workflow_dispatch:
+    inputs:
+      job_id:
+        description: 'Unique job identifier'
+        required: true
+        type: string
+      props_json:
+        description: 'Remotion props (Base64 encoded)'
+        required: true
+        type: string
+      audio_url:
+        description: 'Audio file URL'
+        required: true
+        type: string
+      cover_url:
+        description: 'Cover image URL'
+        required: true
+        type: string
+      duration:
+        description: 'Video duration in seconds'
+        required: true
+        type: string
+      post_content:
+        description: 'SNS post content (Base64 encoded)'
+        required: true
+        type: string
+      platforms_json:
+        description: 'Platforms config (Base64 encoded)'
+        required: true
+        type: string
+
+jobs:
+  render:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install fonts
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y fonts-noto-cjk fonts-noto-cjk-extra
+
+      - name: Mask sensitive data
+        run: |
+          echo "::add-mask::$(echo "${{ inputs.post_content }}" | base64 -d)"
+          echo "::add-mask::$(echo "${{ inputs.platforms_json }}" | base64 -d)"
+
+      - name: Download assets
+        run: |
+          curl -sL -o public/audio.mp3 "${{ inputs.audio_url }}"
+          curl -sL -o public/cover.jpg "${{ inputs.cover_url }}"
+
+      - name: Prepare props
+        run: |
+          echo "${{ inputs.props_json }}" | base64 -d > props.json
+
+      - name: Render video
+        run: |
+          FRAMES=$(((${{ inputs.duration }} * 30) - 1))
+          npx remotion render PodcastShort out/video.mp4 \
+            --props=props.json \
+            --frames=0-${FRAMES} \
+            --codec=h264 \
+            --crf=18 \
+            > /dev/null 2>&1
+
+      - name: Post to SNS
+        run: node scripts/post-late.js 2>&1 | head -c 0
+        env:
+          LATE_API_KEY: ${{ secrets.LATE_API_KEY }}
+          POST_CONTENT_B64: ${{ inputs.post_content }}
+          PLATFORMS_JSON_B64: ${{ inputs.platforms_json }}
+          JOB_ID: ${{ inputs.job_id }}
