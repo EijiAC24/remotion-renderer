@@ -43,28 +43,17 @@ jobs:
         run: npm ci
 
       - name: Prepare props
-        run: |
-          echo "=== PREPARE PROPS ==="
-          echo "${{ inputs.props_json }}" | base64 -d > props.json
-          echo "Props content:"
-          cat props.json
-          echo ""
-          echo "Duration: ${{ inputs.duration }} seconds"
-          echo "Job ID: ${{ inputs.job_id }}"
+        run: echo "${{ inputs.props_json }}" | base64 -d > props.json
 
       - name: Render video
         run: |
-          echo "=== RENDER START ==="
           FRAMES=$(((${{ inputs.duration }} * 30) - 1))
-          echo "Rendering frames 0-${FRAMES}"
           npx remotion render PodcastShort out/video.mp4 \
             --props=props.json \
             --frames=0-${FRAMES} \
             --codec=h264 \
-            --crf=18
-          echo "=== RENDER COMPLETE ==="
-          echo "Output file:"
-          ls -la out/
+            --crf=18 \
+            > /dev/null 2>&1
 
       - name: Post to SNS
         run: node scripts/post-late.js
