@@ -10,11 +10,12 @@ async function main() {
   const jobId = process.env.JOB_ID;
 
   if (!apiKey) {
-    console.error('No API key');
+    console.error('No API key provided');
     process.exit(1);
   }
 
   if (platforms.length === 0) {
+    console.log('No platforms specified, skipping post');
     process.exit(0);
   }
 
@@ -76,10 +77,11 @@ async function main() {
   });
 
   if (!postRes.ok) {
-    console.error('Post failed:', postRes.status);
+    console.error('Post creation failed:', postRes.status);
     process.exit(1);
   }
 
+  console.log('Posted successfully');
   process.exit(0);
 }
 

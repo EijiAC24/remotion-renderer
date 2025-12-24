@@ -52,8 +52,7 @@ jobs:
             --props=props.json \
             --frames=0-${FRAMES} \
             --codec=h264 \
-            --crf=18 \
-            > /dev/null 2>&1
+            --crf=18
 
       - name: Post to SNS
         run: node scripts/post-late.js

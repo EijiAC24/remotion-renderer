@@ -153,9 +153,9 @@ const ImmersiveBackground: React.FC<{
 };
 
 // ============================================
-// PODCAST BADGE (Top Right)
+// COMPACT BRAND HEADER
 // ============================================
-const PodcastBadge: React.FC<{
+const BrandHeader: React.FC<{
   frame: number;
   fps: number;
 }> = ({ frame, fps }) => {
@@ -166,179 +166,207 @@ const PodcastBadge: React.FC<{
       style={{
         position: "absolute",
         top: layout.safe.top,
+        left: layout.safe.left,
         right: layout.safe.right,
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+        gap: 16,
         opacity: anim,
         transform: `translateY(${interpolate(anim, [0, 1], [-15, 0])}px)`,
       }}
     >
+      {/* Minimal brand */}
+      <div
+        style={{
+          fontSize: 42,
+          fontWeight: 900,
+          color: colors.white,
+          letterSpacing: -1,
+          textShadow: "0 4px 30px rgba(0,0,0,0.8)",
+        }}
+      >
+        Daily Blend
+      </div>
+
+      {/* Language badge */}
       <div
         style={{
           background: colors.glassHighlight,
           border: `1px solid ${colors.glassBorder}`,
           borderRadius: 100,
-          padding: "8px 20px",
-          fontSize: 16,
-          fontWeight: 700,
-          color: colors.textSecondary,
-          letterSpacing: 2,
-          textTransform: "uppercase",
+          padding: "6px 14px",
+          display: "flex",
+          alignItems: "center",
+          gap: 8,
         }}
       >
-        PODCAST
+        <span style={{ fontSize: 18, fontWeight: 700, color: colors.warm }}>EN</span>
+        <span style={{ fontSize: 14, color: colors.textMuted }}>|</span>
+        <span style={{ fontSize: 18, fontWeight: 700, color: colors.cool }}>JP</span>
       </div>
     </div>
   );
 };
 
 // ============================================
-// TITLE HEADER (Top)
+// HERO COVER WITH FLOATING TITLE
 // ============================================
-const TitleHeader: React.FC<{
+const HeroCover: React.FC<{
+  coverSrc: string;
   titleEn: string;
   titleJp: string;
   frame: number;
   fps: number;
-}> = ({ titleEn, titleJp, frame, fps }) => {
-  const anim = spring({ frame: frame - 5, fps, config: { damping: 20, stiffness: 110 } });
-
-  return (
-    <div
-      style={{
-        position: "absolute",
-        top: layout.safe.top,
-        left: layout.safe.left,
-        right: layout.safe.right + 120, // Space for PODCAST badge
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "flex-start",
-        gap: 8,
-        opacity: anim,
-        transform: `translateY(${interpolate(anim, [0, 1], [20, 0])}px)`,
-      }}
-    >
-      {/* Japanese title */}
-      <div
-        style={{
-          fontSize: 32,
-          fontWeight: 700,
-          color: colors.white,
-          lineHeight: 1.3,
-          textShadow: "0 2px 20px rgba(0,0,0,0.6)",
-        }}
-      >
-        {titleJp}
-      </div>
-
-      {/* English title */}
-      <div
-        style={{
-          fontSize: 20,
-          fontWeight: 500,
-          color: colors.textSecondary,
-          textShadow: "0 2px 12px rgba(0,0,0,0.5)",
-        }}
-      >
-        {titleEn}
-      </div>
-    </div>
-  );
-};
-
-// ============================================
-// HERO COVER (Center)
-// ============================================
-const HeroCover: React.FC<{
-  coverSrc: string;
-  frame: number;
-  fps: number;
   glowScale: number;
   isJapanese: boolean;
-}> = ({ coverSrc, frame, fps, glowScale, isJapanese }) => {
+}> = ({ coverSrc, titleEn, titleJp, frame, fps, glowScale, isJapanese }) => {
   const coverAnim = spring({ frame: frame - 5, fps, config: { damping: 18, stiffness: 100 } });
+  const titleAnim = spring({ frame: frame - 12, fps, config: { damping: 20, stiffness: 110 } });
 
   const pulseScale = interpolate(glowScale, [0, 1], [1, 1.04]);
   const accentColor = isJapanese ? colors.cool : colors.warm;
   const glowColor = isJapanese ? colors.coolGlow : colors.warmGlow;
 
-  // Cover positioning - centered vertically, accounting for title above
-  const coverSize = 580;
-  const coverTop = layout.safe.top + 120; // Below title
+  // Cover positioning - centered in upper portion of safe zone
+  const coverSize = 340;
+  const coverTop = layout.safe.top + 80;
 
   return (
-    <div
-      style={{
-        position: "absolute",
-        top: coverTop,
-        left: "50%",
-        transform: `translateX(-50%) scale(${coverAnim * pulseScale})`,
-        opacity: coverAnim,
-        width: coverSize,
-        height: coverSize,
-      }}
-    >
-      {/* Glow ring */}
+    <>
+      {/* Cover Image */}
       <div
         style={{
           position: "absolute",
-          inset: -20,
-          borderRadius: 40,
-          background: `conic-gradient(from ${frame * 0.5}deg, ${colors.warm}, ${colors.cool}, ${colors.warm})`,
-          filter: `blur(${interpolate(glowScale, [0, 1], [15, 35])}px)`,
-          opacity: interpolate(glowScale, [0, 1], [0.3, 0.7]),
-        }}
-      />
-
-      {/* Shadow */}
-      <div
-        style={{
-          position: "absolute",
-          top: 20,
-          left: 20,
-          width: "100%",
-          height: "100%",
-          background: "rgba(0,0,0,0.5)",
-          borderRadius: 24,
-          filter: "blur(30px)",
-        }}
-      />
-
-      {/* Image container */}
-      <div
-        style={{
-          position: "relative",
-          width: "100%",
-          height: "100%",
-          borderRadius: 24,
-          overflow: "hidden",
-          border: `2px solid ${colors.glassBorder}`,
-        }}
-      >
-        <Img
-          src={coverSrc}
-          style={{ width: "100%", height: "100%", objectFit: "cover" }}
-        />
-      </div>
-
-      {/* Speaker pill - attached to bottom */}
-      <div
-        style={{
-          position: "absolute",
-          bottom: -16,
+          top: coverTop,
           left: "50%",
-          transform: "translateX(-50%)",
-          background: accentColor,
-          color: colors.bg,
-          fontSize: 18,
-          fontWeight: 800,
-          padding: "8px 24px",
-          borderRadius: 100,
-          letterSpacing: 0.5,
-          boxShadow: `0 4px 20px ${glowColor}`,
+          transform: `translateX(-50%) scale(${coverAnim * pulseScale})`,
+          opacity: coverAnim,
+          width: coverSize,
+          height: coverSize,
         }}
       >
-        {isJapanese ? "Maya" : "Oliver"}
+        {/* Glow ring */}
+        <div
+          style={{
+            position: "absolute",
+            inset: -20,
+            borderRadius: 40,
+            background: `conic-gradient(from ${frame * 0.5}deg, ${colors.warm}, ${colors.cool}, ${colors.warm})`,
+            filter: `blur(${interpolate(glowScale, [0, 1], [15, 35])}px)`,
+            opacity: interpolate(glowScale, [0, 1], [0.3, 0.7]),
+          }}
+        />
+
+        {/* Shadow */}
+        <div
+          style={{
+            position: "absolute",
+            top: 20,
+            left: 20,
+            width: "100%",
+            height: "100%",
+            background: "rgba(0,0,0,0.5)",
+            borderRadius: 24,
+            filter: "blur(30px)",
+          }}
+        />
+
+        {/* Image container */}
+        <div
+          style={{
+            position: "relative",
+            width: "100%",
+            height: "100%",
+            borderRadius: 24,
+            overflow: "hidden",
+            border: `2px solid ${colors.glassBorder}`,
+          }}
+        >
+          <Img
+            src={coverSrc}
+            style={{ width: "100%", height: "100%", objectFit: "cover" }}
+          />
+        </div>
+
+        {/* Speaker pill - attached to bottom */}
+        <div
+          style={{
+            position: "absolute",
+            bottom: -16,
+            left: "50%",
+            transform: "translateX(-50%)",
+            background: accentColor,
+            color: colors.bg,
+            fontSize: 16,
+            fontWeight: 800,
+            padding: "6px 20px",
+            borderRadius: 100,
+            letterSpacing: 0.5,
+            boxShadow: `0 4px 20px ${glowColor}`,
+          }}
+        >
+          {isJapanese ? "Maya" : "Oliver"}
+        </div>
       </div>
-    </div>
+
+      {/* Floating Title Card - below cover */}
+      <div
+        style={{
+          position: "absolute",
+          top: coverTop + coverSize + 40,
+          left: layout.safe.left,
+          right: layout.safe.right,
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          gap: 12,
+          opacity: titleAnim,
+          transform: `translateY(${interpolate(titleAnim, [0, 1], [20, 0])}px)`,
+        }}
+      >
+        {/* Topic label */}
+        <div
+          style={{
+            fontSize: 14,
+            fontWeight: 700,
+            color: colors.textMuted,
+            letterSpacing: 3,
+            textTransform: "uppercase",
+          }}
+        >
+          Today's Expression
+        </div>
+
+        {/* Japanese title */}
+        <div
+          style={{
+            fontSize: 34,
+            fontWeight: 500,
+            color: colors.white,
+            textAlign: "center",
+            lineHeight: 1.35,
+            textShadow: "0 2px 20px rgba(0,0,0,0.6)",
+            maxWidth: 700,
+          }}
+        >
+          {titleJp}
+        </div>
+
+        {/* English title */}
+        <div
+          style={{
+            fontSize: 24,
+            fontWeight: 500,
+            color: colors.textSecondary,
+            textAlign: "center",
+            textShadow: "0 2px 12px rgba(0,0,0,0.5)",
+          }}
+        >
+          {titleEn}
+        </div>
+      </div>
+    </>
   );
 };
 
@@ -414,13 +442,13 @@ const SubtitleDisplay: React.FC<{
         opacity,
         transform: `translateY(${interpolate(enterAnim, [0, 1], [20, 0])}px)`,
         display: "flex",
-        flexDirection: "column",
+        flexDirection: "column-reverse", // Translation at bottom, main card above
         alignItems: "center",
         gap: 14,
         width: "100%",
       }}
     >
-      {/* Translation - appears above main subtitle */}
+      {/* Translation - rendered first, appears at bottom due to column-reverse */}
       {subtitle.translation && !isJapanese && (
         <div
           style={{
@@ -447,7 +475,7 @@ const SubtitleDisplay: React.FC<{
         </div>
       )}
 
-      {/* Main subtitle - always at fixed bottom position */}
+      {/* Main subtitle - always at same position (top of this container) */}
       <div
         style={{
           background: colors.glass,
@@ -524,36 +552,28 @@ export const PodcastShort: React.FC<PodcastShortProps> = ({
   }
   const glowScale = interpolate(glowIntensity, [0, 0.25], [0, 1], { extrapolateRight: "clamp" });
 
-  // Get active subtitle with gap-filling (no flickering)
+  // Get active subtitle with gap-filling
   const getActiveSubtitle = (): (SubtitleData & { extendedEnd?: number }) | null => {
-    // Find subtitle that contains current time (inclusive of end)
-    const current = subtitles.find((s) => currentTime >= s.start && currentTime <= s.end);
+    const current = subtitles.find((s) => currentTime >= s.start && currentTime < s.end);
+    const currentIndex = current ? subtitles.indexOf(current) : -1;
 
     if (current) {
-      const currentIndex = subtitles.indexOf(current);
       const next = subtitles[currentIndex + 1];
-      // Extend to next subtitle if gap is small
-      if (next && (next.start - current.end) <= 0.5) {
+      if (next && (next.start - current.end) < 2) {
         return { ...current, extendedEnd: next.start };
       }
       return current;
     }
 
-    // In gap between subtitles - show previous if gap is small
-    const past = subtitles.filter((s) => s.end < currentTime);
-    const future = subtitles.filter((s) => s.start > currentTime);
+    const past = subtitles.filter((s) => s.end <= currentTime);
+    if (past.length === 0) return null;
 
-    if (past.length > 0 && future.length > 0) {
-      const last = past[past.length - 1];
-      const next = future[0];
-      const gapDuration = next.start - last.end;
+    const last = past[past.length - 1];
+    const next = subtitles.find((s) => s.start > currentTime);
 
-      // If gap is small, extend previous subtitle
-      if (gapDuration <= 1.0 && (currentTime - last.end) < gapDuration) {
-        return { ...last, extendedEnd: next.start };
-      }
+    if (next && (next.start - last.end) < 2) {
+      return { ...last, extendedEnd: next.start };
     }
-
     return null;
   };
 
@@ -575,31 +595,25 @@ export const PodcastShort: React.FC<PodcastShortProps> = ({
       {/* Audio */}
       <Audio src={audioSrc} />
 
-      {/* PODCAST Badge (Top Right) */}
-      <PodcastBadge frame={frame} fps={fps} />
+      {/* Brand Header */}
+      <BrandHeader frame={frame} fps={fps} />
 
-      {/* Title Header (Top Left) */}
-      <TitleHeader
-        titleEn={titleEn}
-        titleJp={titleJp}
-        frame={frame}
-        fps={fps}
-      />
-
-      {/* Hero Cover (Center) */}
+      {/* Hero Cover + Title */}
       <HeroCover
         coverSrc={coverSrc}
+        titleEn={titleEn}
+        titleJp={titleJp}
         frame={frame}
         fps={fps}
         glowScale={glowScale}
         isJapanese={isJapanese}
       />
 
-      {/* Subtitles - below cover */}
+      {/* Subtitles - main card at fixed position, translation below */}
       <div
         style={{
           position: "absolute",
-          top: layout.safe.top + 120 + 580 + 50, // title + cover + gap
+          bottom: layout.safe.bottom + 30,
           left: layout.safe.left,
           right: layout.safe.right,
           display: "flex",
