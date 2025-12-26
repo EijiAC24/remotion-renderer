@@ -11,8 +11,11 @@ import { useAudioData, visualizeAudio } from "@remotion/media-utils";
 import { loadFont } from "@remotion/google-fonts/NotoSansJP";
 import { PodcastShortProps, SubtitleData } from "./types";
 
-// Load Noto Sans JP web font
-const { fontFamily } = loadFont();
+// Load Noto Sans JP web font with only required weights and subsets
+const { fontFamily } = loadFont("normal", {
+  weights: ["400", "500", "600", "700", "800", "900"],
+  subsets: ["japanese", "latin"],
+});
 
 // ============================================
 // LAYOUT SYSTEM - Safe Zone Aware
