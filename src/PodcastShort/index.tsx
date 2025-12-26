@@ -11,11 +11,9 @@ import { useAudioData, visualizeAudio } from "@remotion/media-utils";
 import { loadFont } from "@remotion/google-fonts/NotoSansJP";
 import { PodcastShortProps, SubtitleData } from "./types";
 
-// Load Noto Sans JP web font with only required weights and subsets
-const { fontFamily } = loadFont("normal", {
-  weights: ["400", "500", "600", "700", "800", "900"],
-  subsets: ["japanese", "latin"],
-});
+// Load Noto Sans JP web font
+// Note: Noto Sans JP only supports specific weight/subset combinations
+const { fontFamily } = loadFont();
 
 // ============================================
 // LAYOUT SYSTEM - Safe Zone Aware
@@ -211,6 +209,7 @@ const BrandHeader: React.FC<{
 
 // ============================================
 // HERO COVER WITH FLOATING TITLE
+// Supports both square (1:1) and widescreen (16:9) images
 // ============================================
 const HeroCover: React.FC<{
   coverSrc: string;
@@ -220,7 +219,8 @@ const HeroCover: React.FC<{
   fps: number;
   glowScale: number;
   isJapanese: boolean;
-}> = ({ coverSrc, titleEn, titleJp, frame, fps, glowScale, isJapanese }) => {
+  isWidescreen?: boolean; // true for 16:9 thumbnail images
+}> = ({ coverSrc, titleEn, titleJp, frame, fps, glowScale, isJapanese, isWidescreen = false }) => {
   const coverAnim = spring({ frame: frame - 5, fps, config: { damping: 18, stiffness: 100 } });
   const titleAnim = spring({ frame: frame - 12, fps, config: { damping: 20, stiffness: 110 } });
 
@@ -228,8 +228,10 @@ const HeroCover: React.FC<{
   const accentColor = isJapanese ? colors.cool : colors.warm;
   const glowColor = isJapanese ? colors.coolGlow : colors.warmGlow;
 
-  // Cover sizing (1.3x from original 340px)
-  const coverSize = 440;
+  // Cover sizing - adapt to aspect ratio
+  // Square: 440x440, Widescreen: 880x495 (16:9)
+  const coverWidth = isWidescreen ? 880 : 440;
+  const coverHeight = isWidescreen ? 495 : 440;
 
   return (
     <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
@@ -238,8 +240,8 @@ const HeroCover: React.FC<{
         style={{
           transform: `scale(${coverAnim * pulseScale})`,
           opacity: coverAnim,
-          width: coverSize,
-          height: coverSize,
+          width: coverWidth,
+          height: coverHeight,
           position: "relative",
         }}
       >
@@ -248,7 +250,7 @@ const HeroCover: React.FC<{
           style={{
             position: "absolute",
             inset: -20,
-            borderRadius: 40,
+            borderRadius: isWidescreen ? 30 : 40,
             background: `conic-gradient(from ${frame * 0.5}deg, ${colors.warm}, ${colors.cool}, ${colors.warm})`,
             filter: `blur(${interpolate(glowScale, [0, 1], [15, 35])}px)`,
             opacity: interpolate(glowScale, [0, 1], [0.3, 0.7]),
@@ -264,7 +266,7 @@ const HeroCover: React.FC<{
             width: "100%",
             height: "100%",
             background: "rgba(0,0,0,0.5)",
-            borderRadius: 24,
+            borderRadius: isWidescreen ? 20 : 24,
             filter: "blur(30px)",
           }}
         />
@@ -275,7 +277,7 @@ const HeroCover: React.FC<{
             position: "relative",
             width: "100%",
             height: "100%",
-            borderRadius: 24,
+            borderRadius: isWidescreen ? 20 : 24,
             overflow: "hidden",
             border: `2px solid ${colors.glassBorder}`,
           }}
@@ -527,6 +529,7 @@ export const PodcastShort: React.FC<PodcastShortProps> = ({
   titleEn,
   titleJp,
   subtitles,
+  isWidescreen = false,
 }) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
@@ -615,6 +618,7 @@ export const PodcastShort: React.FC<PodcastShortProps> = ({
           fps={fps}
           glowScale={glowScale}
           isJapanese={isJapanese}
+          isWidescreen={isWidescreen}
         />
       </div>
 

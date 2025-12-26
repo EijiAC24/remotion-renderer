@@ -13,4 +13,5 @@ export interface PodcastShortProps {
   titleEn: string;
   titleJp: string;
   subtitles: SubtitleData[];
+  isWidescreen?: boolean; // true for 16:9 thumbnail images (default: false for square)
 }
