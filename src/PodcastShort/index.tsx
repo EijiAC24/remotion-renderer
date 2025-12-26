@@ -164,16 +164,13 @@ const BrandHeader: React.FC<{
   return (
     <div
       style={{
-        position: "absolute",
-        top: layout.safe.top,
-        left: layout.safe.left,
-        right: layout.safe.right,
         display: "flex",
         justifyContent: "center",
         alignItems: "center",
         gap: 16,
         opacity: anim,
         transform: `translateY(${interpolate(anim, [0, 1], [-15, 0])}px)`,
+        marginBottom: 30,
       }}
     >
       {/* Minimal brand */}
@@ -228,22 +225,19 @@ const HeroCover: React.FC<{
   const accentColor = isJapanese ? colors.cool : colors.warm;
   const glowColor = isJapanese ? colors.coolGlow : colors.warmGlow;
 
-  // Cover positioning - centered in upper portion of safe zone
-  const coverSize = 340;
-  const coverTop = layout.safe.top + 80;
+  // Cover sizing (1.3x from original 340px)
+  const coverSize = 440;
 
   return (
-    <>
+    <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
       {/* Cover Image */}
       <div
         style={{
-          position: "absolute",
-          top: coverTop,
-          left: "50%",
-          transform: `translateX(-50%) scale(${coverAnim * pulseScale})`,
+          transform: `scale(${coverAnim * pulseScale})`,
           opacity: coverAnim,
           width: coverSize,
           height: coverSize,
+          position: "relative",
         }}
       >
         {/* Glow ring */}
@@ -313,10 +307,7 @@ const HeroCover: React.FC<{
       {/* Floating Title Card - below cover */}
       <div
         style={{
-          position: "absolute",
-          top: coverTop + coverSize + 40,
-          left: layout.safe.left,
-          right: layout.safe.right,
+          marginTop: 40,
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
@@ -366,7 +357,7 @@ const HeroCover: React.FC<{
           {titleEn}
         </div>
       </div>
-    </>
+    </div>
   );
 };
 
@@ -410,7 +401,7 @@ const HighlightedText: React.FC<{
 };
 
 // ============================================
-// SUBTITLE DISPLAY - Clean Card Design
+// SUBTITLE DISPLAY - Solid Background (no backdropFilter)
 // ============================================
 const SubtitleDisplay: React.FC<{
   subtitle: SubtitleData & { extendedEnd?: number };
@@ -452,12 +443,12 @@ const SubtitleDisplay: React.FC<{
       {subtitle.translation && !isJapanese && (
         <div
           style={{
-            background: `linear-gradient(135deg, ${colors.cool}20, ${colors.cool}10)`,
-            backdropFilter: "blur(16px)",
-            border: `1px solid ${colors.cool}40`,
+            background: `rgba(20, 60, 55, 0.92)`,
+            border: `1px solid ${colors.cool}50`,
             borderRadius: 12,
             padding: "14px 24px",
             maxWidth: layout.contentWidth - 20,
+            boxShadow: `0 4px 24px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255,255,255,0.08)`,
           }}
         >
           <div
@@ -478,15 +469,15 @@ const SubtitleDisplay: React.FC<{
       {/* Main subtitle - always at same position (top of this container) */}
       <div
         style={{
-          background: colors.glass,
-          backdropFilter: "blur(24px)",
+          background: "rgba(10, 10, 18, 0.88)",
           borderRadius: 16,
           padding: "18px 26px",
           width: "100%",
           maxWidth: layout.contentWidth,
           position: "relative",
-          border: `1px solid ${colors.glassBorder}`,
+          border: `1px solid rgba(255, 255, 255, 0.12)`,
           boxSizing: "border-box",
+          boxShadow: "0 8px 32px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255,255,255,0.06)",
         }}
       >
         {/* Accent line */}
@@ -595,19 +586,34 @@ export const PodcastShort: React.FC<PodcastShortProps> = ({
       {/* Audio */}
       <Audio src={audioSrc} />
 
-      {/* Brand Header */}
-      <BrandHeader frame={frame} fps={fps} />
+      {/* Centered Content (Header + Cover + Title) */}
+      <div
+        style={{
+          position: "absolute",
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: layout.safe.bottom + 250, // Leave space for subtitles
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "center",
+          alignItems: "center",
+        }}
+      >
+        {/* Brand Header */}
+        <BrandHeader frame={frame} fps={fps} />
 
-      {/* Hero Cover + Title */}
-      <HeroCover
-        coverSrc={coverSrc}
-        titleEn={titleEn}
-        titleJp={titleJp}
-        frame={frame}
-        fps={fps}
-        glowScale={glowScale}
-        isJapanese={isJapanese}
-      />
+        {/* Hero Cover + Title */}
+        <HeroCover
+          coverSrc={coverSrc}
+          titleEn={titleEn}
+          titleJp={titleJp}
+          frame={frame}
+          fps={fps}
+          glowScale={glowScale}
+          isJapanese={isJapanese}
+        />
+      </div>
 
       {/* Subtitles - main card at fixed position, translation below */}
       <div
