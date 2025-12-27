@@ -464,9 +464,11 @@ const SubtitleDisplay: React.FC<{
               textAlign: "center",
               lineHeight: 1.4,
               textShadow: "0 2px 12px rgba(0,0,0,0.5)",
+              whiteSpace: "pre-wrap",
             }}
           >
-            {subtitle.translation}
+            {/* Convert <br> to newline and strip ** markers */}
+            {subtitle.translation?.replace(/<br\s*\/?>/gi, '\n').replace(/\*\*/g, '')}
           </div>
         </div>
       )}
@@ -530,9 +532,11 @@ export const PodcastShort: React.FC<PodcastShortProps> = ({
   titleJp,
   subtitles,
   isWidescreen = false,
+  audioOffset = 0,
 }) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
+  const audioStartFrame = Math.round(audioOffset * fps);
   const currentTime = frame / fps;
 
   // Audio visualization
@@ -589,8 +593,8 @@ export const PodcastShort: React.FC<PodcastShortProps> = ({
         accentColor={accentColor}
       />
 
-      {/* Audio */}
-      <Audio src={audioSrc} />
+      {/* Audio - start from audioOffset position */}
+      <Audio src={audioSrc} startFrom={audioStartFrame} />
 
       {/* Centered Content (Header + Cover + Title) */}
       <div
