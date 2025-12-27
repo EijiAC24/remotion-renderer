@@ -24,25 +24,26 @@ const defaultSubtitles: SubtitleData[] = [
 ];
 
 // Default props for Trivia2 preview (トリビアの泉スタイル)
-// "ゴリラの血液型は...(2秒沈黙)...全員B型である" (Algenib, 淡々と)
+// "カメレオンは...(2秒沈黙)...興奮すると色が変わる" (Algenib, 淡々と)
 const defaultTrivia2Words: WordTimestamp[] = [
-  // Part 1: ゴリラの血液型は (0.19 - 1.73)
-  { word: "ゴ", start: 0.19, end: 0.45 },
-  { word: "リ", start: 0.45, end: 0.55 },
-  { word: "ラ", start: 0.55, end: 0.69 },
-  { word: "の", start: 0.69, end: 0.83 },
-  { word: "血", start: 0.83, end: 1.01 },
-  { word: "液", start: 1.01, end: 1.33 },
-  { word: "型", start: 1.33, end: 1.47 },
-  { word: "は", start: 1.47, end: 1.73 },
-  // [2秒の沈黙]
-  // Part 2: 全員B型である (4.06 - 5.8)
-  { word: "全", start: 4.06, end: 4.52 },
-  { word: "員", start: 4.52, end: 4.86 },
-  { word: "B", start: 4.86, end: 5.12 },
-  { word: "型", start: 5.12, end: 5.34 },
-  { word: "で", start: 5.34, end: 5.5 },
-  { word: "ある", start: 5.5, end: 5.8 },
+  // Part 1: カメレオンは (0.16 - 1.18)
+  { word: "カ", start: 0.16, end: 0.4 },
+  { word: "メ", start: 0.4, end: 0.56 },
+  { word: "レ", start: 0.56, end: 0.72 },
+  { word: "オ", start: 0.72, end: 0.84 },
+  { word: "ン", start: 0.84, end: 1.0 },
+  { word: "は", start: 1.0, end: 1.18 },
+  // [2秒の沈黙: 1.18 - 3.61]
+  // Part 2: 興奮すると色が変わる (3.61 - 6.03)
+  { word: "興", start: 3.61, end: 3.95 },
+  { word: "奮", start: 3.95, end: 4.41 },
+  { word: "する", start: 4.41, end: 4.73 },
+  { word: "と", start: 4.73, end: 4.95 },
+  { word: "色", start: 4.95, end: 5.25 },
+  { word: "が", start: 5.25, end: 5.47 },
+  { word: "変", start: 5.47, end: 5.75 },
+  { word: "わ", start: 5.75, end: 5.93 },
+  { word: "る", start: 5.93, end: 6.03 },
 ];
 
 // Default props for TriviaShort preview
@@ -137,15 +138,24 @@ export const RemotionRoot: React.FC = () => {
       <Composition
         id="Trivia2"
         component={Trivia2}
-        durationInFrames={270}
         fps={30}
         width={1080}
         height={1920}
+        calculateMetadata={({ props }) => {
+          // 最後の単語の終了時間 + SFX遅延 + CTA表示(0.5s) + 余韻(2s)
+          const lastWord = props.words[props.words.length - 1];
+          const sfxDuration = props.sfxDuration ?? 0.5;
+          const endTime = lastWord ? lastWord.end + sfxDuration : 0;
+          const totalDuration = endTime + 0.5 + 2; // CTA + 余韻
+          return {
+            durationInFrames: Math.ceil(totalDuration * 30),
+          };
+        }}
         defaultProps={{
           audioSrc: staticFile("trivia2-test.wav"),
           sfxSrc: staticFile("sfx-bell.wav"),
           backgroundType: "video" as const,
-          backgroundSrc: "https://videos.pexels.com/video-files/4453005/4453005-hd_1080_1920_30fps.mp4",
+          backgroundSrc: "https://videos.pexels.com/video-files/13980043/13980043-hd_1080_1920_30fps.mp4",
           words: defaultTrivia2Words,
           sfxDuration: 0.5,
           sfxVolume: 0.5,

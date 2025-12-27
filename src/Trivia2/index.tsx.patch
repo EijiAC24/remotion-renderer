@@ -1,0 +1,17 @@
+--- a/index.tsx
++++ b/index.tsx
+@@ -365,6 +365,14 @@ const CTA: React.FC<{
+   );
+ };
+
++// Helper: ローカルファイルかURLかを判定
++const resolveAudioSrc = (src: string): string => {
++  if (src.startsWith('http://') || src.startsWith('https://')) {
++    return src;
++  }
++  return staticFile(src);
++};
++
+ // ============================================
+ // MAIN COMPONENT
+ // ============================================

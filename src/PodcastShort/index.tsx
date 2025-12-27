@@ -282,15 +282,15 @@ const HeroCover: React.FC<{
           {titleJp}
         </div>
 
-        {/* English title */}
+        {/* English title - 3x larger */}
         <div
           style={{
-            fontSize: 32,
+            fontSize: 96,
             fontWeight: 600,
             color: accentColor,
             textAlign: "center",
-            textShadow: "0 2px 20px rgba(0,0,0,0.6)",
-            letterSpacing: 1,
+            textShadow: "0 4px 30px rgba(0,0,0,0.7)",
+            letterSpacing: 2,
           }}
         >
           {titleEn}

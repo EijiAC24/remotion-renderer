@@ -13,6 +13,7 @@ import {
   useVideoConfig,
   spring,
   Sequence,
+  staticFile,
 } from "remotion";
 import { loadFont as loadMincho } from "@remotion/google-fonts/NotoSerifJP";
 import { loadDefaultJapaneseParser } from "budoux";
@@ -363,6 +364,14 @@ const CTA: React.FC<{
   );
 };
 
+// Helper: ローカルファイルかURLかを判定
+const resolveAudioSrc = (src: string): string => {
+  if (src.startsWith('http://') || src.startsWith('https://')) {
+    return src;
+  }
+  return staticFile(src);
+};
+
 // ============================================
 // MAIN COMPONENT
 // ============================================
@@ -383,21 +392,25 @@ export const Trivia2: React.FC<Trivia2Props> = ({
   // Current time in seconds (accounting for SFX offset)
   const currentTime = frame / fps - sfxDuration;
 
+  // Resolve audio sources
+  const resolvedAudioSrc = resolveAudioSrc(audioSrc);
+  const resolvedSfxSrc = sfxSrc ? resolveAudioSrc(sfxSrc) : null;
+
   return (
     <AbsoluteFill style={{ fontFamily: minchoFont, background: "#000" }}>
       {/* Background */}
       <Background type={backgroundType} src={backgroundSrc} />
 
       {/* Sound Effect (カーン) */}
-      {sfxSrc && (
+      {resolvedSfxSrc && (
         <Sequence from={0} durationInFrames={Math.ceil(sfxDuration * fps) + 30}>
-          <Audio src={sfxSrc} volume={sfxVolume} />
+          <Audio src={resolvedSfxSrc} volume={sfxVolume} />
         </Sequence>
       )}
 
       {/* Main Narration Audio */}
       <Sequence from={Math.ceil(sfxDuration * fps)}>
-        <Audio src={audioSrc} volume={audioVolume} />
+        <Audio src={resolvedAudioSrc} volume={audioVolume} />
       </Sequence>
 
       {/* Header */}
