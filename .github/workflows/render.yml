@@ -47,10 +47,8 @@ jobs:
 
       - name: Render video
         run: |
-          FRAMES=$(((${{ inputs.duration }} * 30) - 1))
           npx remotion render PodcastShort out/video.mp4 \
             --props=props.json \
-            --frames=0-${FRAMES} \
             --codec=h264 \
             --crf=18
 
