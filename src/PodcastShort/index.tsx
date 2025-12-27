@@ -221,20 +221,62 @@ const HeroCover: React.FC<{
   isJapanese: boolean;
   isWidescreen?: boolean; // true for 16:9 thumbnail images
 }> = ({ coverSrc, titleEn, titleJp, frame, fps, glowScale, isJapanese, isWidescreen = false }) => {
-  const coverAnim = spring({ frame: frame - 5, fps, config: { damping: 18, stiffness: 100 } });
-  const titleAnim = spring({ frame: frame - 12, fps, config: { damping: 20, stiffness: 110 } });
+  const coverAnim = spring({ frame: frame - 8, fps, config: { damping: 18, stiffness: 100 } });
+  const titleAnim = spring({ frame: frame - 3, fps, config: { damping: 20, stiffness: 110 } });
 
   const pulseScale = interpolate(glowScale, [0, 1], [1, 1.04]);
   const accentColor = isJapanese ? colors.cool : colors.warm;
   const glowColor = isJapanese ? colors.coolGlow : colors.warmGlow;
 
   // Cover sizing - adapt to aspect ratio
-  // Square: 440x440, Widescreen: 880x495 (16:9)
-  const coverWidth = isWidescreen ? 880 : 440;
-  const coverHeight = isWidescreen ? 495 : 440;
+  // Square: 380x380, Widescreen: 800x450 (16:9) - slightly smaller to make room for title
+  const coverWidth = isWidescreen ? 800 : 380;
+  const coverHeight = isWidescreen ? 450 : 380;
 
   return (
     <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+      {/* Title at TOP - large and prominent */}
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          gap: 8,
+          marginBottom: 30,
+          opacity: titleAnim,
+          transform: `translateY(${interpolate(titleAnim, [0, 1], [-30, 0])}px)`,
+        }}
+      >
+        {/* Japanese title - LARGE */}
+        <div
+          style={{
+            fontSize: 52,
+            fontWeight: 700,
+            color: colors.white,
+            textAlign: "center",
+            lineHeight: 1.25,
+            textShadow: `0 4px 30px rgba(0,0,0,0.8), 0 0 60px ${glowColor}`,
+            maxWidth: 850,
+          }}
+        >
+          {titleJp}
+        </div>
+
+        {/* English title */}
+        <div
+          style={{
+            fontSize: 32,
+            fontWeight: 600,
+            color: accentColor,
+            textAlign: "center",
+            textShadow: "0 2px 20px rgba(0,0,0,0.6)",
+            letterSpacing: 1,
+          }}
+        >
+          {titleEn}
+        </div>
+      </div>
+
       {/* Cover Image */}
       <div
         style={{
@@ -306,60 +348,6 @@ const HeroCover: React.FC<{
           }}
         >
           {isJapanese ? "Maya" : "Oliver"}
-        </div>
-      </div>
-
-      {/* Floating Title Card - below cover */}
-      <div
-        style={{
-          marginTop: 40,
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          gap: 12,
-          opacity: titleAnim,
-          transform: `translateY(${interpolate(titleAnim, [0, 1], [20, 0])}px)`,
-        }}
-      >
-        {/* Topic label */}
-        <div
-          style={{
-            fontSize: 14,
-            fontWeight: 700,
-            color: colors.textMuted,
-            letterSpacing: 3,
-            textTransform: "uppercase",
-          }}
-        >
-          Today's Expression
-        </div>
-
-        {/* Japanese title */}
-        <div
-          style={{
-            fontSize: 34,
-            fontWeight: 500,
-            color: colors.white,
-            textAlign: "center",
-            lineHeight: 1.35,
-            textShadow: "0 2px 20px rgba(0,0,0,0.6)",
-            maxWidth: 700,
-          }}
-        >
-          {titleJp}
-        </div>
-
-        {/* English title */}
-        <div
-          style={{
-            fontSize: 24,
-            fontWeight: 500,
-            color: colors.textSecondary,
-            textAlign: "center",
-            textShadow: "0 2px 12px rgba(0,0,0,0.5)",
-          }}
-        >
-          {titleEn}
         </div>
       </div>
     </div>
