@@ -1,21 +1,15 @@
 /**
  * TriviaShortScroll - Types
- * Scrolling text pattern for Japanese trivia shorts
+ * Simple scrolling text pattern (no timestamps)
  */
-
-export interface SubtitleSegment {
-  start: number;
-  end: number;
-  text: string;
-  type?: 'hook' | 'intro' | 'point' | 'conclusion' | 'cta';
-}
 
 export interface TriviaShortScrollProps {
   audioSrc: string;
   backgroundType: 'video' | 'image';
   backgroundSrc: string;
-  topic: string;
-  subtitles: SubtitleSegment[];
+  title: string;
+  script: string; // Full script text (newline separated)
   primaryColor?: string;
-  accentColor?: string;
+  topic?: string; // Category badge text (default: "雑学")
+  cta?: string;   // Call to action text (default: "フォローで毎日お届け")
 }

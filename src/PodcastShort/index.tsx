@@ -9,11 +9,31 @@ import {
 } from "remotion";
 import { useAudioData, visualizeAudio } from "@remotion/media-utils";
 import { loadFont } from "@remotion/google-fonts/NotoSansJP";
+import { loadDefaultJapaneseParser } from "budoux";
 import { PodcastShortProps, SubtitleData } from "./types";
+
+// Initialize BudouX parser for Japanese text
+const budouxParser = loadDefaultJapaneseParser();
 
 // Load Noto Sans JP web font
 // Note: Noto Sans JP only supports specific weight/subset combinations
 const { fontFamily } = loadFont();
+
+// ============================================
+// BUDOUX TEXT - Natural Japanese Line Breaking
+// ============================================
+/**
+ * Applies BudouX to Japanese text for natural word-boundary line breaks.
+ * Splits text at natural phrase boundaries and joins with word-break opportunities.
+ */
+const applyBudouX = (text: string): React.ReactNode[] => {
+  const segments = budouxParser.parse(text);
+  return segments.map((segment, i) => (
+    <span key={i} style={{ display: "inline-block" }}>
+      {segment}
+    </span>
+  ));
+};
 
 // ============================================
 // LAYOUT SYSTEM - Safe Zone Aware
@@ -355,7 +375,7 @@ const HeroCover: React.FC<{
 };
 
 // ============================================
-// KEYWORD HIGHLIGHT
+// KEYWORD HIGHLIGHT with BudouX for Japanese
 // ============================================
 const HighlightedText: React.FC<{
   text: string;
@@ -381,11 +401,16 @@ const HighlightedText: React.FC<{
                 marginRight: 4,
                 fontWeight: 800,
                 boxShadow: `0 2px 12px ${highlightColor}50`,
+                display: "inline-block",
               }}
             >
               {keyword}
             </span>
           );
+        }
+        // Apply BudouX for Japanese text, plain text for English
+        if (isJapanese) {
+          return <span key={i}>{applyBudouX(part)}</span>;
         }
         return <span key={i}>{part}</span>;
       })}
@@ -452,11 +477,10 @@ const SubtitleDisplay: React.FC<{
               textAlign: "center",
               lineHeight: 1.4,
               textShadow: "0 2px 12px rgba(0,0,0,0.5)",
-              whiteSpace: "pre-wrap",
             }}
           >
-            {/* Convert <br> to newline and strip ** markers */}
-            {subtitle.translation?.replace(/<br\s*\/?>/gi, '\n').replace(/\*\*/g, '')}
+            {/* Apply BudouX for natural Japanese line breaks in translation */}
+            {applyBudouX(subtitle.translation?.replace(/<br\s*\/?>/gi, '').replace(/\*\*/g, '') || '')}
           </div>
         </div>
       )}
@@ -488,7 +512,7 @@ const SubtitleDisplay: React.FC<{
           }}
         />
 
-        {/* Text */}
+        {/* Text - BudouX handles Japanese line breaking */}
         <div
           style={{
             fontSize: isJapanese ? 44 : 46,
@@ -496,8 +520,6 @@ const SubtitleDisplay: React.FC<{
             color: colors.white,
             textAlign: "center",
             lineHeight: 1.45,
-            whiteSpace: "pre-wrap",
-            wordBreak: isJapanese ? "keep-all" : "break-word",
             overflowWrap: "break-word",
             textShadow: "0 2px 8px rgba(0,0,0,0.4)",
             marginTop: 6,

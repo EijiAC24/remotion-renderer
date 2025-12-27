@@ -13,6 +13,7 @@
     "@remotion/cli": "^4.0.394",
     "@remotion/google-fonts": "^4.0.394",
     "@remotion/media-utils": "^4.0.394",
+    "budoux": "^0.7.0",
     "react": "^19.2.3",
     "react-dom": "^19.2.3",
     "remotion": "^4.0.394"
