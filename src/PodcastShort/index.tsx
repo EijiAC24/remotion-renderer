@@ -509,7 +509,8 @@ const SubtitleDisplay: React.FC<{
             textAlign: "center",
             lineHeight: 1.45,
             whiteSpace: "pre-wrap",
-            wordBreak: "keep-all",
+            wordBreak: isJapanese ? "keep-all" : "break-word",
+            overflowWrap: "break-word",
             textShadow: "0 2px 8px rgba(0,0,0,0.4)",
             marginTop: 6,
           }}
