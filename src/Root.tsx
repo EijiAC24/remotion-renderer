@@ -24,26 +24,31 @@ const defaultSubtitles: SubtitleData[] = [
 ];
 
 // Default props for Trivia2 preview (トリビアの泉スタイル)
-// "カメレオンは...(2秒沈黙)...興奮すると色が変わる" (Algenib, 淡々と)
+// "スペースシャトルは...(2秒沈黙)...100％液体燃料である"
 const defaultTrivia2Words: WordTimestamp[] = [
-  // Part 1: カメレオンは (0.16 - 1.18)
-  { word: "カ", start: 0.16, end: 0.4 },
-  { word: "メ", start: 0.4, end: 0.56 },
-  { word: "レ", start: 0.56, end: 0.72 },
-  { word: "オ", start: 0.72, end: 0.84 },
-  { word: "ン", start: 0.84, end: 1.0 },
-  { word: "は", start: 1.0, end: 1.18 },
-  // [2秒の沈黙: 1.18 - 3.61]
-  // Part 2: 興奮すると色が変わる (3.61 - 6.03)
-  { word: "興", start: 3.61, end: 3.95 },
-  { word: "奮", start: 3.95, end: 4.41 },
-  { word: "する", start: 4.41, end: 4.73 },
-  { word: "と", start: 4.73, end: 4.95 },
-  { word: "色", start: 4.95, end: 5.25 },
-  { word: "が", start: 5.25, end: 5.47 },
-  { word: "変", start: 5.47, end: 5.75 },
-  { word: "わ", start: 5.75, end: 5.93 },
-  { word: "る", start: 5.93, end: 6.03 },
+  // Part 1: スペースシャトルは
+  { word: "ス", start: 0.89, end: 1.11 },
+  { word: "ペ", start: 1.11, end: 1.29 },
+  { word: "ー", start: 1.29, end: 1.37 },
+  { word: "ス", start: 1.37, end: 1.51 },
+  { word: "シ", start: 1.51, end: 1.59 },
+  { word: "ャ", start: 1.59, end: 1.71 },
+  { word: "ト", start: 1.71, end: 1.81 },
+  { word: "ル", start: 1.81, end: 1.99 },
+  { word: "は", start: 1.99, end: 2.09 },
+  // [2秒の沈黙]
+  // Part 2: 100％液体燃料である
+  { word: "1", start: 4.84, end: 5.06 },
+  { word: "0", start: 5.06, end: 5.80 },
+  { word: "0", start: 5.98, end: 6.52 },
+  { word: "％", start: 6.52, end: 6.76 },
+  { word: "液", start: 6.76, end: 7.04 },
+  { word: "体", start: 7.04, end: 7.28 },
+  { word: "燃", start: 7.28, end: 7.44 },
+  { word: "料", start: 7.44, end: 7.62 },
+  { word: "で", start: 7.62, end: 7.72 },
+  { word: "あ", start: 7.72, end: 7.82 },
+  { word: "る", start: 7.82, end: 7.92 },
 ];
 
 // Default props for TriviaShort preview
@@ -142,11 +147,11 @@ export const RemotionRoot: React.FC = () => {
         width={1080}
         height={1920}
         calculateMetadata={({ props }) => {
-          // 最後の単語の終了時間 + SFX遅延 + CTA表示(0.5s) + 余韻(2s)
+          // ナレーション終了1秒後にへぇー開始、そこから3秒で動画終了
           const lastWord = props.words[props.words.length - 1];
           const sfxDuration = props.sfxDuration ?? 0.5;
-          const endTime = lastWord ? lastWord.end + sfxDuration : 0;
-          const totalDuration = endTime + 0.5 + 2; // CTA + 余韻
+          const lastWordEnd = lastWord ? lastWord.end : 0;
+          const totalDuration = sfxDuration + lastWordEnd + 1.0 + 3.0;
           return {
             durationInFrames: Math.ceil(totalDuration * 30),
           };
@@ -154,13 +159,16 @@ export const RemotionRoot: React.FC = () => {
         defaultProps={{
           audioSrc: staticFile("trivia2-test.wav"),
           sfxSrc: staticFile("sfx-bell.wav"),
+          heeSfxSrc: staticFile("sfx-hee-multi.mp3"),
           backgroundType: "video" as const,
-          backgroundSrc: "https://videos.pexels.com/video-files/13980043/13980043-hd_1080_1920_30fps.mp4",
+          backgroundSrc: "https://videos.pexels.com/video-files/31425591/13404967_1080_1920_30fps.mp4",
           words: defaultTrivia2Words,
           sfxDuration: 0.5,
           sfxVolume: 0.5,
+          heeSfxVolume: 0.8,
           audioVolume: 1.0,
           cta: "フォローで毎日お届け",
+          description: "スペースシャトルは、固体燃料ロケットブースターと液体燃料メインエンジンの組み合わせで打ち上げられますが、実はメインエンジン自体も100%液体燃料で動いています。この液体燃料は極低温に冷却された液体水素と液体酸素で、非常に高い推進力を生み出します。",
         }}
       />
     </>

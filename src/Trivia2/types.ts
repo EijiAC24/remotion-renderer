@@ -15,6 +15,8 @@ export interface Trivia2Props {
   audioSrc: string;
   /** 効果音（カーン） - optional */
   sfxSrc?: string;
+  /** へぇー効果音 - optional */
+  heeSfxSrc?: string;
   /** 背景タイプ */
   backgroundType: 'video' | 'image';
   /** 背景ソース */
@@ -25,8 +27,12 @@ export interface Trivia2Props {
   sfxDuration?: number;
   /** 効果音の音量 (0-1) */
   sfxVolume?: number;
+  /** へぇー効果音の音量 (0-1) */
+  heeSfxVolume?: number;
   /** ナレーションの音量 (0-1) */
   audioVolume?: number;
   /** CTA テキスト */
   cta?: string;
+  /** 補足説明（Gemini生成） */
+  description?: string;
 }

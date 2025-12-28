@@ -123,7 +123,7 @@ const Header: React.FC<{
           letterSpacing: 2,
         }}
       >
-        明日使えるムダ知識をあなたに
+        明日使える豆知識をあなたに
       </div>
     </div>
   );
@@ -307,6 +307,91 @@ const WordDisplay: React.FC<{
 };
 
 // ============================================
+// DESCRIPTION DIALOG - 補足説明（Gemini生成）
+// ============================================
+const DescriptionDialog: React.FC<{
+  text: string;
+  frame: number;
+  fps: number;
+  lastWordEnd: number;
+  sfxDuration: number;
+}> = ({ text, frame, fps, lastWordEnd, sfxDuration }) => {
+  if (!text) return null;
+
+  // ナレーション終了1秒後に表示開始（そのまま表示し続ける）
+  const startFrame = Math.ceil((lastWordEnd + sfxDuration + 1.0) * fps);
+
+  if (frame < startFrame) return null;
+
+  const localFrame = frame - startFrame;
+
+  // フェードインのみ
+  const opacity = spring({
+    frame: localFrame,
+    fps,
+    config: { damping: 20, stiffness: 100 },
+  });
+
+  return (
+    <div
+      style={{
+        position: "absolute",
+        top: "62%",
+        left: 50,
+        right: 50,
+        display: "flex",
+        justifyContent: "center",
+        opacity,
+        transform: `translateY(${interpolate(opacity, [0, 1], [20, 0])}px)`,
+      }}
+    >
+      <div
+        style={{
+          maxWidth: 920,
+          padding: "28px 36px",
+          background: "linear-gradient(135deg, rgba(20, 20, 30, 0.95) 0%, rgba(40, 40, 60, 0.92) 100%)",
+          borderRadius: 20,
+          border: "2px solid rgba(255, 225, 53, 0.4)",
+          boxShadow: `
+            0 8px 32px rgba(0, 0, 0, 0.5),
+            0 0 0 1px rgba(255, 255, 255, 0.1) inset,
+            0 1px 0 rgba(255, 255, 255, 0.1) inset
+          `,
+          backdropFilter: "blur(16px)",
+        }}
+      >
+        {/* 装飾ライン */}
+        <div
+          style={{
+            position: "absolute",
+            top: 0,
+            left: "50%",
+            transform: "translateX(-50%)",
+            width: 60,
+            height: 3,
+            background: "linear-gradient(90deg, transparent, #FFE135, transparent)",
+            borderRadius: 2,
+          }}
+        />
+        <div
+          style={{
+            fontSize: 30,
+            fontWeight: 500,
+            color: "#FFFFFF",
+            lineHeight: 1.6,
+            textAlign: "center",
+            textShadow: "0 2px 4px rgba(0,0,0,0.3)",
+            letterSpacing: 0.5,
+          }}
+        >
+          {text}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ============================================
 // CTA
 // ============================================
 const CTA: React.FC<{
@@ -316,8 +401,8 @@ const CTA: React.FC<{
   lastWordEnd: number; // 最後の単語の終了時間（秒）
   sfxDuration: number;
 }> = ({ text, frame, fps, lastWordEnd, sfxDuration }) => {
-  // 最後の単語が終わってから0.5秒後にCTA表示
-  const ctaStartFrame = Math.ceil((lastWordEnd + sfxDuration + 0.5) * fps);
+  // 最後の単語が終わってから2秒後にCTA表示
+  const ctaStartFrame = Math.ceil((lastWordEnd + sfxDuration + 2.0) * fps);
 
   if (frame < ctaStartFrame) return null;
 
@@ -334,7 +419,7 @@ const CTA: React.FC<{
     <div
       style={{
         position: "absolute",
-        bottom: layout.safe.bottom + 30,
+        bottom: layout.safe.bottom - 50,
         left: layout.safe.left,
         right: layout.safe.right,
         display: "flex",
@@ -364,9 +449,9 @@ const CTA: React.FC<{
   );
 };
 
-// Helper: ローカルファイルかURLかを判定
+// Helper: ローカルファイルかURLかを判定（既にstaticFile適用済みならそのまま返す）
 const resolveAudioSrc = (src: string): string => {
-  if (src.startsWith('http://') || src.startsWith('https://')) {
+  if (src.startsWith('http://') || src.startsWith('https://') || src.startsWith('/static')) {
     return src;
   }
   return staticFile(src);
@@ -378,13 +463,16 @@ const resolveAudioSrc = (src: string): string => {
 export const Trivia2: React.FC<Trivia2Props> = ({
   audioSrc,
   sfxSrc,
+  heeSfxSrc,
   backgroundType,
   backgroundSrc,
   words,
   sfxDuration = 1.0,
   sfxVolume = 0.7,
+  heeSfxVolume = 0.8,
   audioVolume = 1.0,
   cta = "フォローで毎日お届け",
+  description,
 }) => {
   const frame = useCurrentFrame();
   const { fps, durationInFrames } = useVideoConfig();
@@ -395,6 +483,20 @@ export const Trivia2: React.FC<Trivia2Props> = ({
   // Resolve audio sources
   const resolvedAudioSrc = resolveAudioSrc(audioSrc);
   const resolvedSfxSrc = sfxSrc ? resolveAudioSrc(sfxSrc) : null;
+
+  // へぇー効果音: 1-4回からランダム選択（シード固定で再生中は一貫性を保つ）
+  const heeCount = React.useMemo(() => {
+    // words の長さをシードにして 1-4 をランダム選択
+    const seed = words.reduce((acc, w) => acc + w.word.charCodeAt(0), 0);
+    return (seed % 4) + 1; // 1, 2, 3, or 4
+  }, [words]);
+  const resolvedHeeSfxSrc = heeSfxSrc
+    ? resolveAudioSrc(heeSfxSrc.replace(/sfx-hee-\d+/, `sfx-hee-${heeCount}`).replace('sfx-hee-multi', `sfx-hee-${heeCount}`))
+    : null;
+
+  // へぇー効果音の開始フレーム（最後の単語終了後1秒）
+  const lastWordEnd = words.length > 0 ? words[words.length - 1].end : 0;
+  const heeStartFrame = Math.ceil((sfxDuration + lastWordEnd + 1.0) * fps);
 
   return (
     <AbsoluteFill style={{ fontFamily: minchoFont, background: "#000" }}>
@@ -413,6 +515,13 @@ export const Trivia2: React.FC<Trivia2Props> = ({
         <Audio src={resolvedAudioSrc} volume={audioVolume} />
       </Sequence>
 
+      {/* へぇー効果音（ナレーション終了後） */}
+      {resolvedHeeSfxSrc && (
+        <Sequence from={heeStartFrame}>
+          <Audio src={resolvedHeeSfxSrc} volume={heeSfxVolume} />
+        </Sequence>
+      )}
+
       {/* Header */}
       <Header frame={frame} fps={fps} />
 
@@ -423,6 +532,17 @@ export const Trivia2: React.FC<Trivia2Props> = ({
           currentTime={currentTime}
           frame={frame}
           fps={fps}
+        />
+      )}
+
+      {/* Description Dialog - 補足説明 */}
+      {description && (
+        <DescriptionDialog
+          text={description}
+          frame={frame}
+          fps={fps}
+          lastWordEnd={words.length > 0 ? words[words.length - 1].end : 0}
+          sfxDuration={sfxDuration}
         />
       )}
 

@@ -1,0 +1,160 @@
+name: Render Trivia2
+
+on:
+  workflow_dispatch:
+    inputs:
+      job_id:
+        description: 'Unique job identifier'
+        required: true
+        type: string
+      props_url:
+        description: 'URL to props JSON (GitHub artifact or direct URL)'
+        required: true
+        type: string
+      audio_url:
+        description: 'URL to audio file'
+        required: true
+        type: string
+      distribute:
+        description: 'Distribute to SNS'
+        required: false
+        default: 'false'
+        type: choice
+        options:
+          - 'true'
+          - 'false'
+      platforms:
+        description: 'Platforms (comma-separated)'
+        required: false
+        default: 'tiktok,youtube,instagram'
+        type: string
+
+  # 外部ワークフローからの呼び出し用
+  repository_dispatch:
+    types: [render-trivia2]
+
+jobs:
+  render:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install FFmpeg
+        uses: FedericoCarboni/setup-ffmpeg@v3
+
+      - name: Install Chrome for Remotion
+        run: npx puppeteer browsers install chrome
+
+      - name: Download artifacts from source workflow
+        uses: dawidd6/action-download-artifact@v6
+        with:
+          # PAT with repo scope required for cross-repo artifact download
+          github_token: ${{ secrets.CROSS_REPO_PAT || secrets.GITHUB_TOKEN }}
+          repo: ${{ github.repository_owner }}/${{ github.event.client_payload.source_repo || 'AutomateShorts' }}
+          run_id: ${{ github.event.client_payload.source_run_id }}
+          name: ${{ github.event.client_payload.artifact_name || 'trivia2-prepare-*' }}
+          name_is_regexp: ${{ github.event.client_payload.artifact_name == '' }}
+          path: downloaded
+          if_no_artifact_found: warn
+
+      - name: Setup downloaded files
+        run: |
+          echo "Downloaded files:"
+          ls -laR downloaded || echo "No downloaded directory"
+
+          # Find and copy props.json
+          if [ -d downloaded ]; then
+            find downloaded -name "props.json" -exec cp {} props.json \; 2>/dev/null || true
+            find downloaded -name "audio.wav" -exec cp {} public/trivia2-render.wav \; 2>/dev/null || true
+          fi
+
+          mkdir -p public
+
+          # Fallback: Direct URL download if artifact download failed
+          if [ ! -f props.json ] && [ -n "${{ inputs.props_url }}" ]; then
+            echo "Falling back to direct props URL download..."
+            curl -L "${{ inputs.props_url }}" -o props.json
+          fi
+          if [ ! -f public/trivia2-render.wav ] && [ -n "${{ inputs.audio_url }}" ]; then
+            echo "Falling back to direct audio URL download..."
+            curl -L "${{ inputs.audio_url }}" -o public/trivia2-render.wav
+          fi
+
+          # Verify files exist
+          if [ ! -f props.json ]; then
+            echo "ERROR: props.json not found!"
+            exit 1
+          fi
+          if [ ! -f public/trivia2-render.wav ]; then
+            echo "ERROR: audio.wav not found!"
+            exit 1
+          fi
+
+          echo "Props file:"
+          cat props.json
+          echo ""
+          echo "Audio file size:"
+          ls -la public/trivia2-render.wav
+
+      - name: Calculate duration
+        id: duration
+        run: |
+          # propsからwordsを読み取り、最後の単語の終了時間を取得
+          LAST_WORD_END=$(cat props.json | jq '.words[-1].end')
+          SFX_DURATION=$(cat props.json | jq '.sfxDuration // 0.5')
+          # 動画長さ = sfxDuration + lastWordEnd + 1.0(へぇー待ち) + 3.0(へぇー後)
+          DURATION=$(echo "$SFX_DURATION + $LAST_WORD_END + 4.0" | bc)
+          FRAMES=$(echo "($DURATION * 30) / 1" | bc)
+          echo "duration=$DURATION" >> $GITHUB_OUTPUT
+          echo "frames=$FRAMES" >> $GITHUB_OUTPUT
+          echo "Duration: ${DURATION}s, Frames: ${FRAMES}"
+
+      - name: Update props with local audio path
+        run: |
+          # audioSrcをローカルパスに更新
+          cat props.json | jq '.audioSrc = "trivia2-render.wav"' > props-updated.json
+          mv props-updated.json props.json
+
+      - name: Render video
+        run: |
+          npx remotion render Trivia2 out/trivia2.mp4 \
+            --props=props.json \
+            --frames=0-${{ steps.duration.outputs.frames }} \
+            --codec=h264 \
+            --crf=18
+
+      - name: Upload rendered video for download
+        uses: actions/upload-artifact@v4
+        with:
+          name: trivia2-video-${{ inputs.job_id || github.event.client_payload.job_id }}
+          path: out/trivia2.mp4
+          retention-days: 7
+
+      - name: Distribute to SNS
+        if: inputs.distribute == 'true' || github.event.client_payload.distribute == true
+        run: |
+          echo "Distributing to: ${{ inputs.platforms || github.event.client_payload.platforms }}"
+          # TODO: Late API投稿スクリプト
+          # node scripts/post-late.js
+        env:
+          LATE_API_KEY: ${{ secrets.LATE_API_KEY }}
+          VIDEO_PATH: out/trivia2.mp4
+          PLATFORMS: ${{ inputs.platforms || github.event.client_payload.platforms }}
+
+      - name: Output result
+        run: |
+          echo "✓ Trivia2 rendered successfully"
+          echo "Video: out/trivia2.mp4"
+          echo "Duration: ${{ steps.duration.outputs.duration }}s"
