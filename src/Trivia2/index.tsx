@@ -419,7 +419,7 @@ const CTA: React.FC<{
     <div
       style={{
         position: "absolute",
-        bottom: layout.safe.bottom - 50,
+        bottom: 80,  // Very bottom of screen, below description
         left: layout.safe.left,
         right: layout.safe.right,
         display: "flex",
