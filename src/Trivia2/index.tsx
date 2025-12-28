@@ -425,8 +425,8 @@ const CTA: React.FC<{
     <div
       style={{
         position: "absolute",
-        bottom: 80,  // Very bottom of screen, below description
-        left: layout.safe.left,
+        bottom: 30,  // 1行分下に移動 (80 → 30)
+        left: layout.safe.left + 36,  // 1文字分右に移動
         right: layout.safe.right,
         display: "flex",
         justifyContent: "center",
