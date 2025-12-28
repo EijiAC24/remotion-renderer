@@ -160,6 +160,12 @@ const WordDisplay: React.FC<{
     }
     if (currentLine) lines.push(currentLine);
 
+    // 孤立文字対策: 最終行が1文字なら前の行にマージ
+    if (lines.length > 1 && lines[lines.length - 1].length === 1) {
+      const lastChar = lines.pop();
+      lines[lines.length - 1] += lastChar;
+    }
+
     return lines.join('\n');
   };
 
