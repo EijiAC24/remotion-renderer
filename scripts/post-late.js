@@ -1,6 +1,10 @@
 /**
- * Late API posting script for Trivia2
+ * Late API posting script
  * Posts rendered video to specified platforms via Late (getlate.dev)
+ *
+ * Supports two modes:
+ * - dailyBLEND/PodcastShort: Uses POST_CONTENT_B64 and PLATFORMS_JSON_B64
+ * - Trivia2: Uses PROPS_PATH and PLATFORMS
  */
 
 const fs = require('fs');
@@ -8,23 +12,82 @@ const path = require('path');
 
 const BASE_URL = process.env.LATE_API_URL || 'https://getlate.dev/api/v1';
 
+function decodeBase64(str) {
+  return Buffer.from(str, 'base64').toString('utf-8');
+}
+
 async function main() {
   const apiKey = process.env.LATE_API_KEY;
-  const videoPath = process.env.VIDEO_PATH || path.join(__dirname, '..', 'out', 'trivia2.mp4');
-  const platformsStr = process.env.PLATFORMS || 'instagram';
-  const propsPath = process.env.PROPS_PATH || path.join(__dirname, '..', 'props.json');
+  const jobId = process.env.JOB_ID || `post-${Date.now()}`;
 
-  console.log('=== Late API Post ===');
+  // Determine mode based on environment variables
+  const isDailyBlend = !!process.env.POST_CONTENT_B64;
+
+  let videoPath, platforms, content;
+
+  if (isDailyBlend) {
+    // dailyBLEND/PodcastShort mode
+    console.log('=== Late API Post (dailyBLEND mode) ===');
+    videoPath = process.env.VIDEO_PATH || path.join(__dirname, '..', 'out', 'video.mp4');
+
+    // Decode Base64 content
+    try {
+      content = decodeBase64(process.env.POST_CONTENT_B64);
+    } catch (e) {
+      console.error('ERROR: Failed to decode POST_CONTENT_B64:', e.message);
+      process.exit(1);
+    }
+
+    // Decode Base64 platforms config
+    try {
+      const platformsConfig = JSON.parse(decodeBase64(process.env.PLATFORMS_JSON_B64));
+      // platformsConfig is expected to be an array of platform names or objects with platform property
+      platforms = Array.isArray(platformsConfig)
+        ? platformsConfig.map(p => typeof p === 'string' ? p : p.platform).filter(Boolean)
+        : [];
+    } catch (e) {
+      console.error('ERROR: Failed to decode PLATFORMS_JSON_B64:', e.message);
+      process.exit(1);
+    }
+  } else {
+    // Trivia2 mode
+    console.log('=== Late API Post (Trivia2 mode) ===');
+    videoPath = process.env.VIDEO_PATH || path.join(__dirname, '..', 'out', 'trivia2.mp4');
+    const platformsStr = process.env.PLATFORMS || 'instagram';
+    platforms = platformsStr.split(',').map(p => p.trim()).filter(Boolean);
+    const propsPath = process.env.PROPS_PATH || path.join(__dirname, '..', 'props.json');
+
+    // Read props for content
+    let hashtags = [];
+    if (fs.existsSync(propsPath)) {
+      try {
+        const props = JSON.parse(fs.readFileSync(propsPath, 'utf-8'));
+        const words = props.words || [];
+        const text = words.map(w => w.word).join('');
+        const description = props.description || '';
+        content = `${text}\n\n${description}`;
+        hashtags = ['トリビア', '豆知識', '雑学', 'shorts', 'ショート'];
+        const hashtagStr = hashtags.map(t => `#${t}`).join(' ');
+        content = `${content}\n\n${hashtagStr}`;
+      } catch (e) {
+        console.warn('Could not parse props.json:', e.message);
+      }
+    }
+
+    if (!content) {
+      content = 'トリビアの泉 #トリビア #豆知識 #shorts';
+    }
+  }
+
   console.log(`Video: ${videoPath}`);
-  console.log(`Platforms: ${platformsStr}`);
+  console.log(`Platforms: ${platforms.join(', ')}`);
+  console.log(`Content preview: ${content.substring(0, 100)}...`);
 
   if (!apiKey) {
     console.error('ERROR: LATE_API_KEY not provided');
     process.exit(1);
   }
 
-  // Parse platforms
-  const platforms = platformsStr.split(',').map(p => p.trim()).filter(Boolean);
   if (platforms.length === 0) {
     console.log('No platforms specified, skipping');
     process.exit(0);
@@ -36,29 +99,7 @@ async function main() {
     process.exit(1);
   }
 
-  // Read props for content
-  let content = '';
-  let hashtags = [];
-  if (fs.existsSync(propsPath)) {
-    try {
-      const props = JSON.parse(fs.readFileSync(propsPath, 'utf-8'));
-      // Build content from props
-      const words = props.words || [];
-      const text = words.map(w => w.word).join('');
-      const description = props.description || '';
-      content = `${text}\n\n${description}`;
-      hashtags = ['トリビア', '豆知識', '雑学', 'shorts', 'ショート'];
-    } catch (e) {
-      console.warn('Could not parse props.json:', e.message);
-    }
-  }
-
-  if (!content) {
-    content = 'トリビアの泉 #トリビア #豆知識 #shorts';
-  }
-
   const fileSize = fs.statSync(videoPath).size;
-  const jobId = `trivia2-${Date.now()}`;
 
   const headers = {
     'Authorization': `Bearer ${apiKey}`,
@@ -108,9 +149,6 @@ async function main() {
     // Step 3: Create post for each platform
     console.log('3. Creating posts...');
 
-    const hashtagStr = hashtags.map(t => `#${t}`).join(' ');
-    const fullContent = `${content}\n\n${hashtagStr}`;
-
     for (const platform of platforms) {
       console.log(`   Posting to ${platform}...`);
 
@@ -118,7 +156,7 @@ async function main() {
         method: 'POST',
         headers,
         body: JSON.stringify({
-          content: fullContent,
+          content: content,
           status: 'published',
           platforms: [platform],
           mediaItems: [{ type: 'video', url: mediaUrl }]
