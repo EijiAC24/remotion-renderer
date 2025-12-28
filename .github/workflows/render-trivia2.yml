@@ -144,13 +144,11 @@ jobs:
 
       - name: Distribute to SNS
         if: inputs.distribute == 'true' || github.event.client_payload.distribute == true
-        run: |
-          echo "Distributing to: ${{ inputs.platforms || github.event.client_payload.platforms }}"
-          # TODO: Late API投稿スクリプト
-          # node scripts/post-late.js
+        run: node scripts/post-late.js
         env:
           LATE_API_KEY: ${{ secrets.LATE_API_KEY }}
           VIDEO_PATH: out/trivia2.mp4
+          PROPS_PATH: props.json
           PLATFORMS: ${{ inputs.platforms || github.event.client_payload.platforms }}
 
       - name: Output result
