@@ -23,7 +23,7 @@ async function main() {
   // Determine mode based on environment variables
   const isDailyBlend = !!process.env.POST_CONTENT_B64;
 
-  let videoPath, platforms, content;
+  let videoPath, platforms, platformsConfig, content;
 
   if (isDailyBlend) {
     // dailyBLEND/PodcastShort mode
@@ -38,13 +38,14 @@ async function main() {
       process.exit(1);
     }
 
-    // Decode Base64 platforms config
+    // Decode Base64 platforms config (preserve full objects with accountId)
     try {
-      const platformsConfig = JSON.parse(decodeBase64(process.env.PLATFORMS_JSON_B64));
-      // platformsConfig is expected to be an array of platform names or objects with platform property
-      platforms = Array.isArray(platformsConfig)
-        ? platformsConfig.map(p => typeof p === 'string' ? p : p.platform).filter(Boolean)
-        : [];
+      platformsConfig = JSON.parse(decodeBase64(process.env.PLATFORMS_JSON_B64));
+      if (!Array.isArray(platformsConfig)) {
+        platformsConfig = [];
+      }
+      // Extract platform names for logging
+      platforms = platformsConfig.map(p => typeof p === 'string' ? p : p.platform).filter(Boolean);
     } catch (e) {
       console.error('ERROR: Failed to decode PLATFORMS_JSON_B64:', e.message);
       process.exit(1);
@@ -146,32 +147,36 @@ async function main() {
     }
     console.log('   Upload complete');
 
-    // Step 3: Create post for each platform
+    // Step 3: Create post
     console.log('3. Creating posts...');
 
-    for (const platform of platforms) {
-      console.log(`   Posting to ${platform}...`);
+    // For dailyBLEND mode, use full platform config with accountId
+    // For Trivia2 mode, use simple platform names
+    const platformsPayload = isDailyBlend
+      ? platformsConfig
+      : platforms.map(p => ({ platform: p }));
 
-      const postRes = await fetch(`${BASE_URL}/posts`, {
-        method: 'POST',
-        headers,
-        body: JSON.stringify({
-          content: content,
-          status: 'published',
-          platforms: [platform],
-          mediaItems: [{ type: 'video', url: mediaUrl }]
-        })
-      });
+    console.log(`   Platforms payload: ${JSON.stringify(platformsPayload)}`);
 
-      if (!postRes.ok) {
-        const errorText = await postRes.text();
-        console.error(`   Failed to post to ${platform}: ${errorText}`);
-      } else {
-        const postData = await postRes.json();
-        console.log(`   ✓ ${platform}: Posted successfully`);
-        if (postData.postUrl) {
-          console.log(`     URL: ${postData.postUrl}`);
-        }
+    const postRes = await fetch(`${BASE_URL}/posts`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({
+        content: content,
+        status: 'published',
+        platforms: platformsPayload,
+        mediaItems: [{ type: 'video', url: mediaUrl }]
+      })
+    });
+
+    if (!postRes.ok) {
+      const errorText = await postRes.text();
+      console.error(`   Failed to post: ${errorText}`);
+    } else {
+      const postData = await postRes.json();
+      console.log(`   ✓ Posted successfully`);
+      if (postData.postUrl) {
+        console.log(`     URL: ${postData.postUrl}`);
       }
     }
 
