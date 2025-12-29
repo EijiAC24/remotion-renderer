@@ -23,6 +23,10 @@ on:
         description: 'Platforms config (Base64 encoded)'
         required: true
         type: string
+      cover_url:
+        description: 'Optional cover image URL (overrides props.coverSrc)'
+        required: false
+        type: string
 
 jobs:
   render:
@@ -44,6 +48,12 @@ jobs:
 
       - name: Prepare props
         run: echo "${{ inputs.props_json }}" | base64 -d > props.json
+
+      - name: Override cover URL if provided
+        if: inputs.cover_url != ''
+        run: |
+          jq --arg url "${{ inputs.cover_url }}" '.coverSrc = $url' props.json > props.tmp.json
+          mv props.tmp.json props.json
 
       - name: Render video
         run: |
